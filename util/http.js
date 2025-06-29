@@ -1,25 +1,36 @@
-
 import axios from "axios";
 
-const ENV = import.meta.env
+// ✅ Environment variables
+const ENV = import.meta.env;
 
+// ✅ Axios instance
 const http = axios.create({
-    baseURL: ENV.VITE_SERVER,
-    withCredentials: true
-})
+  baseURL: ENV.VITE_SERVER || "https://snap-pdf-backend.vercel.app", // fallback
+  withCredentials: true, // send cookies if using auth tokens in cookies
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
-
+// ✅ Refresh token function
 const refreshAccessToken = async () => {
   try {
-    await http.get("/api/user/refresh-token"); // will use cookie
+    await http.get("/api/user/refresh-token");
     console.log("✅ Silent token refresh");
   } catch (err) {
-    console.error("🔒 Periodic token refresh failed:", err);
-    logoutUser();
+    const message =
+      err.response?.data?.message || err.message || "Token refresh failed";
+    console.error("🔒 Periodic token refresh failed:", message);
+    if (typeof logoutUser === "function") {
+      logoutUser();
+    } else {
+      console.warn("⚠️ logoutUser function is not defined");
+    }
   }
 };
 
-setInterval(refreshAccessToken, 13 * 60 * 1000); // 14 minutes
+// ✅ Call refresh every 13 minutes
+setInterval(refreshAccessToken, 13 * 60 * 1000); // 13 minutes
 
-
-export default http
+// ✅ Export axios instance
+export default http;
